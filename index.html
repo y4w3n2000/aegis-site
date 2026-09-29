@@ -88,6 +88,28 @@
   .engage .btn:hover { background: #fff; color: var(--navy); }
   @media (max-width: 720px) { .terms { grid-template-columns: 1fr; gap: 24px; } }
 
+
+  /* Enquiry form */
+  .form { max-width: 640px; margin-top: 10px; }
+  .form label { display: block; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--navy-soft); margin: 26px 0 6px; }
+  .form input[type=text], .form input[type=email], .form textarea { width: 100%; background: transparent; border: 0; border-bottom: 1px solid rgba(255,255,255,.35); color: #fff; font: inherit; font-size: 16px; padding: 8px 0; border-radius: 0; outline: none; }
+  .form input:focus, .form textarea:focus { border-bottom-color: #fff; }
+  .form textarea { min-height: 130px; resize: vertical; border: 1px solid rgba(255,255,255,.35); padding: 12px; margin-top: 4px; }
+  .form textarea:focus { border-color: #fff; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .chips label { margin: 0; letter-spacing: .12em; }
+  .chips input { position: absolute; opacity: 0; pointer-events: none; }
+  .chips span { display: inline-block; border: 1px solid rgba(255,255,255,.35); padding: 8px 16px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #fff; cursor: pointer; }
+  .chips input:checked + span { background: #fff; color: var(--navy); }
+  .chips input:focus-visible + span { outline: 2px solid #fff; outline-offset: 2px; }
+  .form button { margin-top: 34px; background: transparent; cursor: pointer; font-family: var(--sans); color: #fff; }
+  .form button:hover { background: #fff; color: var(--navy); }
+  .form button[disabled] { opacity: .5; cursor: default; }
+  .hp { position: absolute; left: -9999px; }
+  #formMsg { margin-top: 22px; font-size: 15px; color: #fff; min-height: 24px; }
+  .alt { margin-top: 44px; color: var(--navy-soft); font-size: 15px; }
+  .alt a { color: #fff; }
+
   footer { background: #0a1530; color: var(--navy-soft); padding: 50px 0 40px; font-size: 13px; }
   footer .top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 30px; margin-bottom: 36px; }
   footer .logo b { color: #fff; }
@@ -200,8 +222,39 @@
           <p>Government affairs and regulatory strategy for healthcare and advanced manufacturing. General legal services are not offered.</p>
         </div>
       </div>
-      <a class="btn" href="mailto:glenda@aegispublicaffairs.com?subject=Enquiry%20via%20website&body=Name%3A%0AOrganisation%3A%0ARole%3A%0ASector%3A%0ABrief%20description%20of%20your%20enquiry%3A%0A">Initiate an enquiry</a>
-      <a class="btn" style="margin-left:12px" href="https://www.linkedin.com/company/aegis-public-affairs-apac/" target="_blank" rel="noopener">LinkedIn</a>
+      <form class="form" id="enquiryForm">
+        <input type="hidden" name="access_key" value="e14f3eb2-c77f-4ea0-bf16-59bfa35b425e">
+        <input type="hidden" name="subject" value="New enquiry via aegispublicaffairs.com">
+        <input type="hidden" name="from_name" value="Aegis Public Affairs website">
+        <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off">
+
+        <label for="f-name">Full name</label>
+        <input type="text" id="f-name" name="name" required autocomplete="name">
+
+        <label for="f-org">Organisation</label>
+        <input type="text" id="f-org" name="organisation" required autocomplete="organization">
+
+        <label for="f-role">Role / title</label>
+        <input type="text" id="f-role" name="role" autocomplete="organization-title">
+
+        <label for="f-email">Email address</label>
+        <input type="email" id="f-email" name="email" required autocomplete="email">
+
+        <label id="sector-label">Sector</label>
+        <div class="chips" role="radiogroup" aria-labelledby="sector-label">
+          <label><input type="radio" name="sector" value="Healthcare" checked><span>Healthcare</span></label>
+          <label><input type="radio" name="sector" value="Advanced Manufacturing"><span>Advanced Manufacturing</span></label>
+          <label><input type="radio" name="sector" value="Other"><span>Other</span></label>
+        </div>
+
+        <label for="f-msg">Brief description of your enquiry</label>
+        <textarea id="f-msg" name="message" required></textarea>
+
+        <button class="btn" type="submit" id="formBtn">Send enquiry</button>
+        <p id="formMsg" role="status" aria-live="polite"></p>
+      </form>
+
+      <p class="alt">Prefer to write directly? <a href="mailto:glenda@aegispublicaffairs.com">glenda@aegispublicaffairs.com</a> &nbsp;&middot;&nbsp; <a href="https://www.linkedin.com/company/aegis-public-affairs-apac/" target="_blank" rel="noopener">LinkedIn</a></p>
     </div>
   </section>
 
@@ -226,5 +279,30 @@
   </div>
 </footer>
 
+<script>
+  (function () {
+    var form = document.getElementById('enquiryForm');
+    var btn = document.getElementById('formBtn');
+    var msg = document.getElementById('formMsg');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      btn.disabled = true; btn.textContent = 'Sending...'; msg.textContent = '';
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(form)
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d.success) {
+          form.reset();
+          msg.textContent = 'Thank you. Your enquiry has been received and you will hear back within two business days.';
+        } else { throw new Error(d.message || 'failed'); }
+      }).catch(function () {
+        msg.innerHTML = 'Sorry, that did not go through. Please email <a href="mailto:glenda@aegispublicaffairs.com" style="color:#fff">glenda@aegispublicaffairs.com</a> directly.';
+      }).finally(function () {
+        btn.disabled = false; btn.textContent = 'Send enquiry';
+      });
+    });
+  })();
+</script>
 </body>
 </html>
